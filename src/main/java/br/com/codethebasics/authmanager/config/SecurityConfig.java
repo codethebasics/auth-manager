@@ -49,6 +49,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         configureAntMatchers(http);
     }
 
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        super.configure(auth);
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -59,16 +64,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * Realiza a triagem do processo de autenticação
      * ---------------------------------------------
      */
-    private void configureAuthentication(HttpSecurity http) throws Exception {
+    private void configureAuthentication(AuthenticationManagerBuilder auth) throws Exception {
         try {
             if (authmode == null) {
                 authmode = IN_MEMORY;
             }
             switch (authmode) {
-                case HTTP_BASIC: httpbasicAuthentication(http); break;
-                case JWT: jwtAuthentication(http); break;
-                case OAUTH: oauthAuthentication(http); break;
-                default: inmemoryAuthentication(http); break;
+                case HTTP_BASIC: httpbasicAuthentication(auth); break;
+                case JWT: jwtAuthentication(auth); break;
+                case OAUTH: oauthAuthentication(auth); break;
+                default: throw new Exception("Authentication method not supported!");
             }
         }
         catch (Exception e) {
@@ -92,7 +97,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * Configura autenticação http basic
      * ---------------------------------
      */
-    private void httpbasicAuthentication(HttpSecurity http) {
+    private void httpbasicAuthentication(AuthenticationManagerBuilder auth) {
         System.out.println("httpbasicAuthentication");
     }
 
@@ -102,7 +107,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * ------------------------------------
      * @see {https://jwt.io/}
      */
-    private void jwtAuthentication(HttpSecurity http) {
+    private void jwtAuthentication(AuthenticationManagerBuilder auth) {
         System.out.println("jwtAuthentication");
     }
 
@@ -112,7 +117,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * --------------------------------
      * @see {https://oauth.net/2/}
      */
-    private void oauthAuthentication(HttpSecurity http) {
+    private void oauthAuthentication(AuthenticationManagerBuilder auth) {
         System.out.println("oauthAuthentication");
     }
 
@@ -122,6 +127,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * -------------------------------------------
      */
     private void inmemoryAuthentication(HttpSecurity http) {
-        System.out.println("oauthAuthentication");
+
     }
 }
