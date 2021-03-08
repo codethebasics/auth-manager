@@ -1,5 +1,7 @@
 package br.com.codethebasics.authmanager.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 /**
  * -----------------------------------------------------
@@ -22,41 +25,42 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
     @Value("${env}")
     private String env;
 
     @Value("${authmode}")
     private String authmode;
 
-    private static final String IN_MEMORY = "inmemory";
-    private static final String HTTP_BASIC = "httpbasic";
+    private static final String INMEMORY = "inmemory";
     private static final String JWT = "jwt";
     private static final String OAUTH = "oauth";
 
     /**
-     * -------------------------------------------
-     * Realiza a configurações gerais da aplicação
-     * -------------------------------------------
+     * ---------
+     * Segurança
+     * ---------
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        System.out.println();
+        log.info("Configuring HTTP Security...");
 
-        // Para permitir a visualização da interface do H2
         http.headers().frameOptions().disable();
-
-        configureAuthentication(http);
-
         configureAntMatchers(http);
+
+        log.info("\t[OK]");
     }
 
+    /**
+     * ------------
+     * Autenticação
+     * ------------
+     */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        super.configure(auth);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        configureAuthentication(auth);
     }
 
     /**
@@ -66,18 +70,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private void configureAuthentication(AuthenticationManagerBuilder auth) throws Exception {
         try {
-            if (authmode == null) {
-                authmode = IN_MEMORY;
-            }
+            System.out.println();
+            log.info("Configuring authentication mode...");
             switch (authmode) {
-                case HTTP_BASIC: httpbasicAuthentication(auth); break;
                 case JWT: jwtAuthentication(auth); break;
                 case OAUTH: oauthAuthentication(auth); break;
-                default: throw new Exception("Authentication method not supported!");
+                default: throw new Exception("\t[!] Authentication mode not provided. InMemoryAuthentication will be taken...");
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage());
+            inmemoryAuthentication(auth);
         }
     }
 
@@ -87,18 +90,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * ------------------------------------------
      */
     private void configureAntMatchers(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-                .antMatchers("/api/v1/public/**").permitAll()
-                .anyRequest().authenticated();
-    }
-
-    /**
-     * ---------------------------------
-     * Configura autenticação http basic
-     * ---------------------------------
-     */
-    private void httpbasicAuthentication(AuthenticationManagerBuilder auth) {
-        System.out.println("httpbasicAuthentication");
+        http.authorizeRequests(authorize -> {
+            authorize.antMatchers("/api/v1/public/**").permitAll();
+        })
+        .authorizeRequests()
+        .anyRequest().authenticated()
+        .and().httpBasic();
     }
 
     /**
@@ -108,7 +105,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * @see {https://jwt.io/}
      */
     private void jwtAuthentication(AuthenticationManagerBuilder auth) {
-        System.out.println("jwtAuthentication");
+        log.info("\t[OK] {}", JWT);
     }
 
     /**
@@ -118,15 +115,25 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * @see {https://oauth.net/2/}
      */
     private void oauthAuthentication(AuthenticationManagerBuilder auth) {
-        System.out.println("oauthAuthentication");
+        log.info("\t\t[OK] {}", OAUTH);
     }
 
     /**
-     * -------------------------------------------
-     * Configura autenticação em memória (default)
-     * -------------------------------------------
+     * ---------------------------------
+     * Configura autenticação em memória
+     * ---------------------------------
+     * @see {https://oauth.net/2/}
      */
-    private void inmemoryAuthentication(HttpSecurity http) {
+    private void inmemoryAuthentication(AuthenticationManagerBuilder auth) throws Exception {
+        log.info("\t[OK] {}", INMEMORY);
+        auth.inMemoryAuthentication()
+                .withUser("testuser")
+                .password(passwordEncoder().encode("testpass"))
+                .roles("ADMIN");
+    }
 
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
