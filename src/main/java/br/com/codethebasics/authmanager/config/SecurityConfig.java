@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -14,11 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 
 /**
- * -----------------------------------------------------
  * Classe de configuração de segurança da aplicação.
- * - Gerencia regras de acesso aos recursos da aplicação
- * - Gerencia acesso à base de dados
- * -----------------------------------------------------
+ *
  * @author codethebasics
  */
 @Configuration
@@ -38,25 +36,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String OAUTH = "oauth";
 
     /**
-     * ---------
-     * Segurança
-     * ---------
+     * Configura http security
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        System.out.println();
-        log.info("Configuring HTTP Security...");
 
+        log.info("-- Configuring HTTP Security...");
+
+        http.cors().disable();
         http.headers().frameOptions().disable();
-        configureAntMatchers(http);
+
+        http.authorizeRequests(authorize -> {
+            authorize.antMatchers("/api/v1/public/**").permitAll();
+        })
+        .authorizeRequests()
+        .anyRequest().authenticated()
+        .and().httpBasic();
 
         log.info("\t[OK]");
     }
 
     /**
-     * ------------
-     * Autenticação
-     * ------------
+     * Configura a autenticação da aplicação
      */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -64,14 +65,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * ---------------------------------------------
      * Realiza a triagem do processo de autenticação
-     * ---------------------------------------------
      */
     private void configureAuthentication(AuthenticationManagerBuilder auth) throws Exception {
         try {
-            System.out.println();
-            log.info("Configuring authentication mode...");
+            log.info("-- Configuring authentication mode...");
             switch (authmode) {
                 case JWT: jwtAuthentication(auth); break;
                 case OAUTH: oauthAuthentication(auth); break;
@@ -85,23 +83,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * ------------------------------------------
-     * Configura acesso aos recursos da aplicação
-     * ------------------------------------------
-     */
-    private void configureAntMatchers(HttpSecurity http) throws Exception {
-        http.authorizeRequests(authorize -> {
-            authorize.antMatchers("/api/v1/public/**").permitAll();
-        })
-        .authorizeRequests()
-        .anyRequest().authenticated()
-        .and().httpBasic();
-    }
-
-    /**
-     * ------------------------------------
      * Configura autenticação via token JWT
-     * ------------------------------------
+     *
      * @see {https://jwt.io/}
      */
     private void jwtAuthentication(AuthenticationManagerBuilder auth) {
@@ -109,9 +92,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * --------------------------------
      * Configura autenticação via oauth
-     * --------------------------------
+     *
      * @see {https://oauth.net/2/}
      */
     private void oauthAuthentication(AuthenticationManagerBuilder auth) {
@@ -119,10 +101,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * ---------------------------------
      * Configura autenticação em memória
-     * ---------------------------------
-     * @see {https://oauth.net/2/}
      */
     private void inmemoryAuthentication(AuthenticationManagerBuilder auth) throws Exception {
         log.info("\t[OK] {}", INMEMORY);
@@ -130,6 +109,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .withUser("testuser")
                 .password(passwordEncoder().encode("testpass"))
                 .roles("ADMIN");
+    }
+
+    /**
+     * Ignora segurança para recursos específicos
+     */
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/h2-console/**");
     }
 
     @Bean

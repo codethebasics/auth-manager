@@ -16,9 +16,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ------------------------------------
  * Teste das configurações de segurança
- * ------------------------------------
+ *
  * @author codethebasics
  */
 @WebMvcTest
@@ -38,9 +37,7 @@ class SecurityConfigTest {
     }
 
     /**
-     * ---------------------------------
      * Testa acesso a um recurso público
-     * ---------------------------------
      */
     @Test
     @DisplayName("When access public resource, then return 200 [OK]")
@@ -50,9 +47,7 @@ class SecurityConfigTest {
     }
 
     /**
-     * ----------------------------------------------------------------
      * Testa acesso a um recurso privado por um usuário não autenticado
-     * ----------------------------------------------------------------
      */
     @Test
     @DisplayName("Given anonymous user, when access private resource, then return 401 [Unauthorized]")
@@ -62,9 +57,7 @@ class SecurityConfigTest {
     }
 
     /**
-     * ------------------------------------------------------------
      * Testa acesso a um recurso privado por um usuário autenticado
-     * ------------------------------------------------------------
      */
     @Test
     @WithMockUser("sa")
@@ -75,14 +68,22 @@ class SecurityConfigTest {
     }
 
     /**
-     * ---------------------------------------------------------------------------
      * Testa acesso a um recurso privado por um usuário autenticado via http basic
-     * ---------------------------------------------------------------------------
      */
     @Test
     @DisplayName("Given user, when access private resource with http basic authentication, then return 200 [OK]")
     public void givenHttpBasicUser_whenAccessPrivateResource_thenReturn200() throws Exception {
         mockMvc.perform(get("/api/v1/users").with(httpBasic("testuser", "testpass")))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * Testa acesso de um usuário comum a um recurso que requer privilégios administrativos
+     */
+    @Test
+    @DisplayName("Given common user, when access admin resource, then return unauthorized [401]")
+    public void givenCommonUser_whenAccessAdminResource_thenReturn401() throws Exception {
+        mockMvc.perform(get("/api/v1/users/save"))
+                .andExpect(status().isUnauthorized());
     }
 }

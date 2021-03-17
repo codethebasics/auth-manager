@@ -13,4 +13,5 @@ public class UserEndpoint {
     public ResponseEntity<String> list() {
         return ResponseEntity.ok("list()");
     }
+
 }
