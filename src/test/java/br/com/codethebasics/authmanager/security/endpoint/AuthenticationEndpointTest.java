@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,14 +37,12 @@ class AuthenticationEndpointTest {
     }
 
     @Test
-    @WithMockUser("testuser")
     @DisplayName("Given auth credentials, when authenticate, then return 200 [OK]")
     public void givenAuthCredentials_whenAuthenticate_thenReturn200() throws Exception {
 
         // fixture
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
-
         ObjectWriter writer = mapper.writer().withDefaultPrettyPrinter();
 
         // given
@@ -55,12 +53,12 @@ class AuthenticationEndpointTest {
         String requestJson = writer.writeValueAsString(authenticationRequest);
 
         // when / then
-        MvcResult result = mockMvc.perform(post("/api/v1/auth")
-                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        MvcResult result = mockMvc.perform(post("/api/v1/public/auth")
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(requestJson))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        System.out.println(result.getResponse().getContentAsString());
+        assertNotNull(result);
     }
 }
